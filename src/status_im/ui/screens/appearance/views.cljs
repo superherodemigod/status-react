@@ -9,10 +9,7 @@
             [status-im.i18n.i18n :as i18n]
             [status-im.constants :as constants]))
 
-(def titles {constants/profile-pictures-show-to-contacts-only    (i18n/label :t/recent-recipients)
-             constants/profile-pictures-show-to-everyone         (i18n/label :t/everyone)
-             constants/profile-pictures-show-to-none             (i18n/label :t/none)
-             constants/profile-pictures-visibility-contacts-only (i18n/label :t/recent-recipients)
+(def titles {constants/profile-pictures-visibility-contacts-only (i18n/label :t/recent-recipients)
              constants/profile-pictures-visibility-everyone      (i18n/label :t/everyone)
              constants/profile-pictures-visibility-none          (i18n/label :t/none)})
 
