@@ -127,7 +127,7 @@
     :on-press  #(re-frame/dispatch [:multiaccounts.ui/profile-picture-show-to-switched id])}])
 
 (views/defview profile-pic-show-to []
-  (views/letsubs [{:keys [profile-pictures-show-to]} [:multiaccount/profile-pictures-show-to]]
+  (views/letsubs [profile-pictures-show-to [:multiaccount/profile-pictures-show-to]]
     [react/view {:flex 1}
      [topbar/topbar {:title (i18n/label :t/show-profile-pictures-to)}]
      [react/view {:margin-top 8}
