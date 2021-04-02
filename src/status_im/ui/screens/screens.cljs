@@ -103,11 +103,14 @@
             [status-im.ui.screens.communities.edit-channel :as edit-channel]
             [status-im.ui.screens.anonymous-metrics-settings.views :as anonymous-metrics-settings]
             [status-im.ui.components.colors :as colors]
-            [status-im.ui.components.icons.icons :as icons]))
+            [status-im.ui.components.icons.icons :as icons]
+            [status-im.ui.screens.chat.pinned-messages :as pin-messages]))
 
 (def components
   [{:name      :chat-toolbar
-    :component chat/topbar}])
+    :component chat/topbar}
+   {:name      :pin-toolbar
+    :component pin-messages/pins-topbar}])
 
 (defn right-button-options [id icon]
   {:id   id
@@ -209,6 +212,11 @@
                                      :rightButtons (right-button-options :chat :more)}}
             :right-handler chat/topbar-button
             :component     chat/chat}
+           
+           ;Pinned messages
+           {:name          :chat-pinned-messages
+            :options       {:topBar {:visible false}}
+            :component     pin-messages/pinned-messages}
 
            {:name      :group-chat-profile
             :insets    {:top false}

@@ -1570,5 +1570,16 @@
     "no-thanks": "No thanks",
     "help-improve-status": "Help improve Status",
     "thank-you": "Thank you",
-    "count-metrics-collected": "{{count}} metrics collected"
+    "count-metrics-collected": "{{count}} metrics collected",
+    "pinned-messages": "Pinned messages",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "no-pinned-messages": "No pinned messages",
+    "pinned-messages-count": {
+        "one": "1 pinned message",
+        "other": "{{count}} pinned messages"
+    },
+    "pinned-messages-empty": "Pinned messages will appear here. To pin a message, press and hold it and tap `Pin`",
+    "pinned-by": "Pinned by",
+    "pin-limit-reached": "Pin limit reached. Unpin a previous message first."
 }

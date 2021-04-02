@@ -22,7 +22,11 @@
             [reagent.core :as reagent]
             [status-im.ui.screens.chat.components.reply :as components.reply]
             [status-im.ui.screens.chat.message.link-preview :as link-preview]
-            [status-im.ui.screens.communities.icon :as communities.icon])
+            [status-im.ui.screens.communities.icon :as communities.icon]
+            [status-im.chat.models.pin-message :as models.pin-message]
+            [status-im.ui.components.list.views :as list]
+            [status-im.ui.components.radio :as radio]
+            [status-im.utils.handlers :refer [<sub]])
   (:require-macros [status-im.utils.views :refer [defview letsubs]]))
 
 (defview mention-element [from]
@@ -32,39 +36,40 @@
 (defn message-timestamp
   ([message]
    [message-timestamp message false])
-  ([{:keys [timestamp-str outgoing content outgoing-status]} justify-timestamp?]
-   [react/view (when justify-timestamp?
-                 {:align-self                       :flex-end
-                  :position                         :absolute
-                  :bottom                           9 ; 6 Bubble bottom, 3 message baseline
-                  (if (:rtl? content) :left :right) 0
-                  :flex-direction                   :row
-                  :align-items                      :flex-end})
-    (when (and outgoing justify-timestamp?)
-      [icons/icon (case outgoing-status
-                    :sending   :tiny-icons/tiny-pending
-                    :sent      :tiny-icons/tiny-sent
-                    :not-sent  :tiny-icons/tiny-warning
-                    :delivered :tiny-icons/tiny-delivered
-                    :tiny-icons/tiny-pending)
-       {:width               16
-        :height              12
-        :color               colors/white
-        :accessibility-label (name outgoing-status)}])
-    [react/text {:style (style/message-timestamp-text outgoing)}
-     timestamp-str]]))
+  ([{:keys [timestamp-str outgoing content outgoing-status pinned in-popover?]} justify-timestamp?]
+   (when-not in-popover?
+     [react/view (when justify-timestamp?
+                   {:align-self                       :flex-end
+                    :position                         :absolute
+                    :bottom                           9 ; 6 Bubble bottom, 3 message baseline
+                    (if (:rtl? content) :left :right) 0
+                    :flex-direction                   :row
+                    :align-items                      :flex-end})
+      (when (and outgoing justify-timestamp?)
+        [icons/icon (case outgoing-status
+                      :sending   :tiny-icons/tiny-pending
+                      :sent      :tiny-icons/tiny-sent
+                      :not-sent  :tiny-icons/tiny-warning
+                      :delivered :tiny-icons/tiny-delivered
+                      :tiny-icons/tiny-pending)
+         {:width               16
+          :height              12
+          :color               (if pinned colors/gray colors/white)
+          :accessibility-label (name outgoing-status)}])
+      [react/text {:style (style/message-timestamp-text (and outgoing (not pinned)))}
+       timestamp-str]])))
 
 (defview quoted-message
-  [_ {:keys [from parsed-text image]} outgoing current-public-key public?]
+  [_ {:keys [from parsed-text image]} outgoing current-public-key public? pinned]
   (letsubs [contact-name [:contacts/contact-name-by-identity from]]
-    [react/view {:style (style/quoted-message-container outgoing)}
+    [react/view {:style (style/quoted-message-container (and outgoing (not pinned)))}
      [react/view {:style style/quoted-message-author-container}
       [chat.utils/format-reply-author
        from
        contact-name
        current-public-key
-       (partial style/quoted-message-author outgoing)
-       outgoing]]
+       (partial style/quoted-message-author (and outgoing (not pinned)))
+       (and outgoing (not pinned))]]
      (if (and image
               ;; Disabling images for public-chats
               (not public?))
@@ -73,11 +78,11 @@
                               :background-color :black
                               :border-radius    4}
                      :source {:uri image}}]
-       [react/text {:style           (style/quoted-message-text outgoing)
+       [react/text {:style           (style/quoted-message-text (and outgoing (not pinned)))
                     :number-of-lines 5}
         (components.reply/get-quoted-text-with-mentions parsed-text)])]))
 
-(defn render-inline [message-text outgoing content-type acc {:keys [type literal destination]}]
+(defn render-inline [message-text outgoing pinned content-type acc {:keys [type literal destination]}]
   (case type
     ""
     (conj acc literal)
@@ -89,22 +94,22 @@
                literal])
 
     "emph"
-    (conj acc [react/text-class (style/emph-style outgoing) literal])
+    (conj acc [react/text-class (style/emph-style (and outgoing (not pinned))) literal])
 
     "strong"
-    (conj acc [react/text-class (style/strong-style outgoing) literal])
+    (conj acc [react/text-class (style/strong-style (and outgoing (not pinned))) literal])
 
     "strong-emph"
-    (conj acc [quo/text (style/strong-emph-style outgoing) literal])
+    (conj acc [quo/text (style/strong-emph-style (and outgoing (not pinned))) literal])
 
     "del"
-    (conj acc [react/text-class (style/strikethrough-style outgoing) literal])
+    (conj acc [react/text-class (style/strikethrough-style (and outgoing (not pinned))) literal])
 
     "link"
     (conj acc
           [react/text-class
            {:style
-            {:color                (if outgoing colors/white-persist colors/blue)
+            {:color                (if (and outgoing (not pinned)) colors/white-persist colors/blue)
              :text-decoration-line :underline}
             :on-press
             #(when (and (security/safe-link? destination)
@@ -117,14 +122,14 @@
     (conj acc [react/text-class
                {:style    {:color (cond
                                     (= content-type constants/content-type-system-text) colors/black
-                                    outgoing                                            colors/mention-outgoing
+                                    (and outgoing (not pinned))                                            colors/mention-outgoing
                                     :else                                               colors/mention-incoming)}
                 :on-press (when-not (= content-type constants/content-type-system-text)
                             #(re-frame/dispatch [:chat.ui/show-profile literal]))}
                [mention-element literal]])
     "status-tag"
     (conj acc [react/text-class
-               {:style {:color                (if outgoing colors/white-persist colors/blue)
+               {:style {:color                (if (and outgoing (not pinned)) colors/white-persist colors/blue)
                         :text-decoration-line :underline}
                 :on-press
                 #(re-frame/dispatch
@@ -134,19 +139,19 @@
 
     (conj acc literal)))
 
-(defn render-block [{:keys [content outgoing content-type]} acc
+(defn render-block [{:keys [content outgoing content-type pinned in-popover?]} acc
                     {:keys [type ^js literal children]}]
   (case type
 
     "paragraph"
     (conj acc (reduce
-               (fn [acc e] (render-inline (:text content) outgoing content-type acc e))
-               [react/text-class (style/text-style outgoing content-type)]
+               (fn [acc e] (render-inline (:text content) outgoing pinned content-type acc e))
+               [react/text-class (style/text-style (and outgoing (not pinned)) content-type in-popover?)]
                children))
 
     "blockquote"
-    (conj acc [react/view (style/blockquote-style outgoing)
-               [react/text-class (style/blockquote-text-style outgoing)
+    (conj acc [react/view (style/blockquote-style (and outgoing (not pinned)))
+               [react/text-class (style/blockquote-text-style (and outgoing (not pinned)))
                 (.substring literal 0 (dec (.-length literal)))]])
 
     "codeblock"
@@ -161,10 +166,10 @@
 (defn render-parsed-text [message tree]
   (reduce (fn [acc e] (render-block message acc e)) [:<>] tree))
 
-(defn render-parsed-text-with-timestamp [{:keys [timestamp-str outgoing] :as message} tree]
+(defn render-parsed-text-with-timestamp [{:keys [timestamp-str outgoing in-popover?] :as message} tree]
   (let [elements (render-parsed-text message tree)
         timestamp [react/text {:style (style/message-timestamp-placeholder)}
-                   (str (if outgoing "        " "  ") timestamp-str)]
+                   (str (if (and outgoing (not in-popover?)) "        " "  ") (when-not in-popover? timestamp-str))]
         last-element (peek elements)]
     ;; Using `nth` here as slightly faster than `first`, roughly 30%
     ;; It's worth considering pure js structures for this code path as
@@ -199,6 +204,36 @@
      (i18n/label :t/status-not-sent-tap)]
     [react/view style/not-sent-icon
      [icons/icon :main-icons/warning {:color colors/red}]]]])
+
+(defn pin-author-name [pinned-by]
+  (let [user-contact @(re-frame/subscribe [:multiaccount/contact])
+        contact-names @(re-frame/subscribe [:contacts/contact-two-names-by-identity pinned-by])]
+    ;; We append empty spaces to the name as a workaround to make one-line and multi-line label components show correctly
+    (str "                   " (if (= pinned-by (user-contact :public-key)) (i18n/label :t/You) (first contact-names)))))
+
+(def pin-icon-width 9)
+
+(def pin-icon-height 15)
+
+(defn pinned-by-indicator [outgoing display-photo? pinned-by]
+  [react/view {:style (style/pin-indicator outgoing display-photo?)
+               :accessibility-label :pinned-by}
+   [react/view {:style (style/pinned-by-text-icon-container)}
+    [react/view {:style (style/pin-icon-container)}
+     [icons/icon :main-icons/pin {:color            colors/gray
+                                  :height           pin-icon-height
+                                  :width            pin-icon-width
+                                  :background-color :red}]]
+    [quo/text {:weight :regular
+               :size   :small
+               :color  :main
+               :style  (style/pinned-by-text)}
+     (i18n/label :t/pinned-by)]]
+   [quo/text {:weight :medium
+              :size   :small
+              :color  :main
+              :style  (style/pin-author-text)}
+    (pin-author-name pinned-by)]])
 
 (defn message-delivery-status
   [{:keys [chat-id message-id outgoing-status message-type]}]
@@ -249,7 +284,7 @@
   "Author, userpic and delivery wrapper"
   [{:keys [first-in-group? display-photo? display-username?
            identicon
-           from outgoing]
+           from outgoing in-popover?]
     :as   message} content {:keys [modal close-modal]}]
   [react/view {:style               (style/message-wrapper message)
                :pointer-events      :box-none
@@ -262,9 +297,10 @@
          [react/touchable-highlight {:on-press #(do (when modal (close-modal))
                                                     (re-frame/dispatch [:chat.ui/show-profile from]))}
           [photos/member-photo from identicon]])])
-    [react/view {:style (style/message-author-wrapper outgoing display-photo?)}
+    [react/view {:style (style/message-author-wrapper outgoing display-photo? in-popover?)}
      (when display-username?
        [react/touchable-opacity {:style    style/message-author-touchable
+                                 :disabled in-popover?
                                  :on-press #(do (when modal (close-modal))
                                                 (re-frame/dispatch [:chat.ui/show-profile from]))}
         [message-author-name from {:modal modal}]])
@@ -286,7 +322,7 @@
         (when (not= (/ width k) (first @dimensions))
           (reset! dimensions [(/ width k) image-max-height]))))))
 
-(defn message-content-image [{:keys [content outgoing] :as message} {:keys [on-long-press]}]
+(defn message-content-image [{:keys [content outgoing in-popover?] :as message} {:keys [on-long-press]}]
   (let [dimensions (reagent/atom [image-max-width image-max-height])
         visible (reagent/atom false)
         uri (:image content)]
@@ -303,7 +339,8 @@
          [react/touchable-highlight {:on-press      (fn []
                                                       (reset! visible true)
                                                       (react/dismiss-keyboard!))
-                                     :on-long-press on-long-press}
+                                     :on-long-press on-long-press
+                                     :disabled      in-popover?}
           [react/view {:style               (style/image-message style-opts)
                        :accessibility-label :message-image}
            [react/image {:style       (dissoc style-opts :outgoing)
@@ -331,21 +368,39 @@
 (def message-height-px 200)
 (def max-message-height-px 150)
 
-(defn on-long-press-fn [on-long-press message content]
-  (on-long-press
-   (concat
-    (when (:show-input? message)
-      [{:on-press #(re-frame/dispatch [:chat.ui/reply-to-message message])
-        :label    (i18n/label :t/message-reply)}])
-    [{:on-press #(react/copy-to-clipboard
-                  (components.reply/get-quoted-text-with-mentions
-                   (get content :parsed-text)))
-      :label    (i18n/label :t/sharing-copy-to-clipboard)}])))
+(defn on-long-press-fn [on-long-press {:keys [public? pinned chat-id] :as message} content]
+  (let [{:keys [group-chat community-id admins]} @(re-frame/subscribe [:chats/current-chat-chat-view])
+        current-pk @(re-frame/subscribe [:multiaccount/public-key])
+        community @(re-frame/subscribe [:communities/community community-id])
+        group-admin? (get admins current-pk)
+        community-admin? (when community (community :admin))
+        pinned-messages @(re-frame/subscribe [:chats/pinned chat-id])]
+    (on-long-press
+     (concat
+      (when (:show-input? message)
+        [{:on-press #(re-frame/dispatch [:chat.ui/reply-to-message message])
+          :label    (i18n/label :t/message-reply)}])
+      [{:on-press #(react/copy-to-clipboard
+                    (components.reply/get-quoted-text-with-mentions
+                     (get content :parsed-text)))
+        :label    (i18n/label :t/sharing-copy-to-clipboard)}]
+      (when (and (not public?)
+                 (or (not group-chat)
+                     (and group-chat
+                          (or group-admin?
+                              community-admin?)))) [{:on-press #(if (and (not pinned) (> (count pinned-messages) 2))
+                                                                  (do
+                                                                    (js/setTimeout (fn [] (re-frame/dispatch [:dismiss-keyboard])) 500)
+                                                                    (re-frame/dispatch [:show-popover {:view             :pin-limit
+                                                                                                       :message          message
+                                                                                                       :prevent-closing? true}]))
+                                                                  (re-frame/dispatch [::models.pin-message/send-pin-message (assoc message :pinned (not pinned))]))
+                                                     :label    (if pinned (i18n/label :t/unpin) (i18n/label :t/pin))}])))))
 
 (defn collapsible-text-message [{:keys [mentioned]} _]
   (let [collapsed?   (reagent/atom false)
         collapsible? (reagent/atom false)]
-    (fn [{:keys [content outgoing current-public-key public?] :as message} on-long-press modal]
+    (fn [{:keys [content outgoing current-public-key public? pinned in-popover?] :as message} on-long-press modal]
       (let [max-height (when-not (or outgoing modal)
                          (if @collapsible?
                            (if @collapsed? message-height-px nil)
@@ -358,7 +413,8 @@
                              (if @collapsed?
                                (do (reset! collapsed? false)
                                    (js/setTimeout #(on-long-press-fn on-long-press message content) 200))
-                               (on-long-press-fn on-long-press message content)))})
+                               (on-long-press-fn on-long-press message content)))
+            :disabled       in-popover?})
          [react/view {:style (style/message-view message)}
           [react/view {:style      (style/message-view-content)
                        :max-height max-height}
@@ -371,13 +427,13 @@
                              (reset! collapsed? true)
                              (reset! collapsible? true))}
               (when (and (seq response-to) (:quoted-message message))
-                [quoted-message response-to (:quoted-message message) outgoing current-public-key public?])
+                [quoted-message response-to (:quoted-message message) outgoing current-public-key public? pinned])
               [render-parsed-text-with-timestamp message (:parsed-text content)]])
            (when-not @collapsed?
              [message-timestamp message true])
            (when (and @collapsible? (not modal))
              (if @collapsed?
-               (let [color (if mentioned colors/mentioned-background colors/blue-light)]
+               (let [color (if pinned colors/pin-background (if mentioned colors/mentioned-background colors/blue-light))]
                  [react/touchable-highlight
                   {:on-press #(swap! collapsed? not)
                    :style    {:position :absolute :bottom 0 :left 0 :right 0 :height 72}}
@@ -405,48 +461,69 @@
   [community-content message])
 
 (defmethod ->message constants/content-type-status
-  [{:keys [content content-type] :as message}]
+  [{:keys [content content-type pinned] :as message}]
   [message-content-wrapper message
    [react/view style/status-container
     [react/text {:style (style/status-text)}
      (reduce
-      (fn [acc e] (render-inline (:text content) false content-type acc e))
+      (fn [acc e] (render-inline (:text content) false pinned content-type acc e))
       [react/text-class {:style (style/status-text)}]
       (-> content :parsed-text peek :children))]]])
 
 (defmethod ->message constants/content-type-emoji
-  [{:keys [content current-public-key outgoing public?] :as message} {:keys [on-long-press modal]
-                                                                      :as   reaction-picker}]
+  [{:keys [content current-public-key outgoing public? pinned in-popover?] :as message} {:keys [on-long-press modal]
+                                                                                         :as   reaction-picker}]
   (let [response-to (:response-to content)]
     [message-content-wrapper message
      [react/touchable-highlight (when-not modal
-                                  {:on-press      (fn []
+                                  {:disabled      in-popover?
+                                   :on-press      (fn []
                                                     (react/dismiss-keyboard!))
                                    :on-long-press (fn []
-                                                    (on-long-press
-                                                     [{:on-press #(re-frame/dispatch [:chat.ui/reply-to-message message])
-                                                       :label    (i18n/label :t/message-reply)}
-                                                      {:on-press #(react/copy-to-clipboard (get content :text))
-                                                       :label    (i18n/label :t/sharing-copy-to-clipboard)}]))})
+                                                    (let [{:keys [chat-id group-chat community-id admins]} @(re-frame/subscribe [:chats/current-chat-chat-view])
+                                                          current-pk @(re-frame/subscribe [:multiaccount/public-key])
+                                                          community @(re-frame/subscribe [:communities/community community-id])
+                                                          group-admin? (get admins current-pk)
+                                                          community-admin? (when community (community :admin))
+                                                          pinned-messages @(re-frame/subscribe [:chats/pinned chat-id])]
+                                                      (on-long-press
+                                                       (concat
+                                                        [{:on-press #(re-frame/dispatch [:chat.ui/reply-to-message message])
+                                                          :label    (i18n/label :t/message-reply)}
+                                                         {:on-press #(react/copy-to-clipboard (get content :text))
+                                                          :label    (i18n/label :t/sharing-copy-to-clipboard)}]
+                                                        (when (and (not public?)
+                                                                   (or (not group-chat)
+                                                                       (and group-chat
+                                                                            (or group-admin?
+                                                                                community-admin?)))) [{:on-press #(if (and (not pinned) (> (count pinned-messages) 2))
+                                                                                                                    (do
+                                                                                                                      (js/setTimeout (fn [] (re-frame/dispatch [:dismiss-keyboard])) 500)
+                                                                                                                      (re-frame/dispatch [:show-popover {:view             :pin-limit
+                                                                                                                                                         :message          message
+                                                                                                                                                         :prevent-closing? true}]))
+                                                                                                                    (re-frame/dispatch [::models.pin-message/send-pin-message (assoc message :pinned (not pinned))]))
+                                                                                                       :label    (if pinned (i18n/label :t/unpin) (i18n/label :t/pin))}])))))})
       [react/view (style/message-view message)
        [react/view {:style (style/message-view-content)}
         [react/view {:style (style/style-message-text outgoing)}
          (when (and (seq response-to) (:quoted-message message))
-           [quoted-message response-to (:quoted-message message) outgoing current-public-key public?])
+           [quoted-message response-to (:quoted-message message) outgoing current-public-key public? pinned])
          [react/text {:style (style/emoji-message message)}
           (:text content)]]
         [message-timestamp message]]]]
      reaction-picker]))
 
 (defmethod ->message constants/content-type-sticker
-  [{:keys [content from outgoing]
+  [{:keys [content from outgoing in-popover?]
     :as   message}
    {:keys [on-long-press modal]
     :as   reaction-picker}]
   (let [pack (get-in content [:sticker :pack])]
     [message-content-wrapper message
      [react/touchable-highlight (when-not modal
-                                  {:accessibility-label :sticker-message
+                                  {:disabled            in-popover?
+                                   :accessibility-label :sticker-message
                                    :on-press            (fn [_]
                                                           (when pack
                                                             (re-frame/dispatch [:stickers/open-sticker-pack pack]))
@@ -462,10 +539,11 @@
                     :source {:uri (contenthash/url (-> content :sticker :hash))}}]]
      reaction-picker]))
 
-(defmethod ->message constants/content-type-image [{:keys [content] :as message} {:keys [on-long-press modal]
-                                                                                  :as   reaction-picker}]
+(defmethod ->message constants/content-type-image [{:keys [content in-popover?] :as message} {:keys [on-long-press modal]
+                                                                                              :as   reaction-picker}]
   [message-content-wrapper message
-   [message-content-image message {:modal modal
+   [message-content-image message {:modal         modal
+                                   :disabled      in-popover?
                                    :on-long-press (fn []
                                                     (on-long-press
                                                      [{:on-press #(re-frame/dispatch [:chat.ui/reply-to-message message])
@@ -489,21 +567,101 @@
   [message-content-wrapper message
    [unknown-content-type message]])
 
-(defn chat-message [message space-keeper]
-  [reactions/with-reaction-picker
-   {:message         message
-    :reactions       @(re-frame/subscribe [:chats/message-reactions (:message-id message) (:chat-id message)])
-    :picker-on-open  (fn []
-                       (space-keeper true))
-    :picker-on-close (fn []
-                       (space-keeper false))
-    :send-emoji      (fn [{:keys [emoji-id]}]
-                       (re-frame/dispatch [::models.reactions/send-emoji-reaction
-                                           {:message-id (:message-id message)
-                                            :emoji-id   emoji-id}]))
-    :retract-emoji   (fn [{:keys [emoji-id emoji-reaction-id]}]
-                       (re-frame/dispatch [::models.reactions/send-emoji-reaction-retraction
-                                           {:message-id        (:message-id message)
-                                            :emoji-id          emoji-id
-                                            :emoji-reaction-id emoji-reaction-id}]))
-    :render          ->message}])
+(defn chat-message [{:keys [outgoing display-photo? pinned pinned-by] :as message} space-keeper]
+  [react/view
+   [reactions/with-reaction-picker
+    {:message         message
+     :reactions       @(re-frame/subscribe [:chats/message-reactions (:message-id message) (:chat-id message)])
+     :picker-on-open  (fn []
+                        (space-keeper true))
+     :picker-on-close (fn []
+                        (space-keeper false))
+     :send-emoji      (fn [{:keys [emoji-id]}]
+                        (re-frame/dispatch [::models.reactions/send-emoji-reaction
+                                            {:message-id (:message-id message)
+                                             :emoji-id   emoji-id}]))
+     :retract-emoji   (fn [{:keys [emoji-id emoji-reaction-id]}]
+                        (re-frame/dispatch [::models.reactions/send-emoji-reaction-retraction
+                                            {:message-id        (:message-id message)
+                                             :emoji-id          emoji-id
+                                             :emoji-reaction-id emoji-reaction-id}]))
+     :render          ->message}]
+   (when pinned
+     [react/view {:style (style/pin-indicator-container outgoing)}
+      [pinned-by-indicator outgoing display-photo? pinned-by]])])
+
+(def selected-unpin (reagent/atom nil))
+
+(defn render-pin-fn [{:keys [message-id outgoing] :as message}
+                     _
+                     _
+                     {:keys [group-chat public? current-public-key space-keeper]}]
+  [react/touchable-without-feedback {:style {:width "100%"}
+                                     :on-press #(reset! selected-unpin message-id)}
+   [react/view {:style {:flex-direction  :row
+                        :align-items     :center
+                        :justify-content :space-between
+                        :flex            1
+                        :padding-right   20}}
+    [chat-message
+     (assoc message
+            :group-chat group-chat
+            :public? public?
+            :current-public-key current-public-key
+            :show-input? false
+            :pinned false
+            :display-username? (not outgoing)
+            :display-photo? false
+            :last-in-group? false
+            :in-popover? true)
+     space-keeper]
+    [react/view {:style {:position    :absolute
+                         :right       18
+                         :padding-top 4}}
+     [radio/radio (= @selected-unpin message-id)]]]])
+
+(def list-key-fn #(or (:message-id %) (:value %)))
+
+(defn pinned-messages-view [chat-id]
+  (let [pinned-messages @(re-frame/subscribe [:chats/pinned chat-id])]
+    [list/flat-list
+     {:key-fn                       list-key-fn
+      :data                         (reverse (vals pinned-messages))
+      :render-data                  {:chat-id chat-id}
+      :render-fn                    render-pin-fn
+      :on-scroll-to-index-failed    identity
+      :style                        {:flex-grow 0
+                                     :border-top-width 1
+                                     :border-bottom-width 1
+                                     :border-top-color colors/gray-lighter
+                                     :border-bottom-color colors/gray-lighter}
+      :content-container-style      {:padding-bottom 10
+                                     :padding-top 10}}]))
+
+(defn pin-limit-popover []
+  (let [{:keys [message]} (<sub [:popover/popover])]
+    [react/view
+     [react/view {:style {:height 60
+                          :justify-content :center}}
+      [react/text {:style {:padding-horizontal 40
+                           :text-align :center}}
+       (i18n/label :t/pin-limit-reached)]]
+     [pinned-messages-view (message :chat-id)]
+     [react/view {:flex-direction :row :padding-horizontal 16 :height 60 :justify-content :space-between :align-items :center}
+      [quo/button
+       {:on-press #(do
+                     (reset! selected-unpin nil)
+                     (re-frame/dispatch [:hide-popover]))
+        :type :secondary}
+       (i18n/label :t/cancel)]
+      [quo/button
+       {:on-press #(do
+                     (re-frame/dispatch [::models.pin-message/send-pin-message {:chat-id    (message :chat-id)
+                                                                                :message-id @selected-unpin
+                                                                                :pinned    false}])
+                     (re-frame/dispatch [::models.pin-message/send-pin-message (assoc message :pinned true)])
+                     (re-frame/dispatch [:hide-popover])
+                     (reset! selected-unpin nil))
+        :type :secondary
+        :theme (if (nil? @selected-unpin) :disabled :negative)}
+       (i18n/label :t/unpin)]]]))
