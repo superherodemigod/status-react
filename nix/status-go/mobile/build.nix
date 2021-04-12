@@ -1,4 +1,4 @@
-{ lib, stdenv, utils, callPackage, buildGo114Package
+{ lib, stdenv, utils, callPackage, buildGo116Package
 , go, androidPkgs, openjdk, gomobile, xcodeWrapper
 # object with source attributes
 , meta, source
@@ -20,7 +20,7 @@ let
   # formatted for use with -target
   targetArchs = map (a: "${platform}/${a}") architectures;
 
-in buildGo114Package {
+in buildGo116Package {
   pname = source.repo;
   version = "${source.cleanVersion}-${source.shortRev}-${platform}";
 
@@ -41,11 +41,10 @@ in buildGo114Package {
   preBuild = let
     NIX_GOWORKDIR = "$NIX_BUILD_TOP/go-build";
   in ''
-
     mkdir ${NIX_GOWORKDIR}
 
     export GO111MODULE=off
-    export GOPATH=${gomobile.out}:$GOPATH
+    export GOPATH=${gomobile}:$GOPATH
     export NIX_GOWORKDIR=${NIX_GOWORKDIR}
 
   '' + optionalString (platform == "android") ''
