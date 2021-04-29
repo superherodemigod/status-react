@@ -2,6 +2,44 @@
 
 This document describes how to update Status APK builds for the [F-Droid](https://f-droid.org/) Android application catalogue.
 
+
+# Automated release
+
+## Pre-requisites
+
+- A gitlab account
+- A forked copy of the [frdroiddata repo](https://gitlab.com/fdroid/fdroiddata) on your gitlab account.
+- A link to the release published
+- `apkanalyzer` installed
+
+## Steps
+
+
+### Checkout  the release/tag/hash you want to release
+
+First checkout the branch/commit you want to release
+
+For example:
+
+`git checkout release/1.13.x` 
+
+To checkout a release branch.
+
+Or if you want to release a specific commit:
+
+`git checkout ${hash}`
+
+### Run the script
+
+Run the script making sure you pass your USERNAME and RELEASE_LINK in the env variables:
+
+For example:
+
+`env USERNAME=cammellos RELEASE_LINK="https://status-im-releases.ams3.digitaloceanspaces.com/StatusIm-210426-081458-896b58-release-universal.apk" bash scripts/release-fdroid.sh`
+
+This will update the file, commit and push to the repo.
+After that you can create a PR from the gitlab interface.
+
 # Intro
 
 In simplest terms F-Droid requires a YAML file that defines the steps necessary to create a universal unsigned APK build. This is achieved by submitting a new app versions into the `metadata/im.status.ethereum.yml` file in the [fdroiddata](https://gitlab.com/fdroid/fdroiddata) repository.
