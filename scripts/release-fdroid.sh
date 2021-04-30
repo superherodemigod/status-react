@@ -69,8 +69,8 @@ $end_file" | head -n -2 > $metadata_file
 set_version_entry="CurrentVersion: $version_name
 CurrentVersionCode: $version_code"
 
-# append last two lines
-printf "$set_version_entry" >> $metadata_file
+# append last two lines and remove trailing newline
+printf "$set_version_entry" | head -c -1 >> $metadata_file
 
 # Add, commit and push
 cd $clone_dir && git add $metadata_file && git commit -m "Add Status version $version_name" && git push --set-upstream origin $branch_name
