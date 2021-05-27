@@ -1536,7 +1536,6 @@
     "one-week": "One week",
     "one-month": "One month",
     "my-profile": "My profile",
-    "bip39-password-placeholder": "BIP39 password",
     "public-channel": "Public channel",
     "default-sync-period": "Sync history for",
     "anonymous-usage-data": "Anonymous usage data",
@@ -1577,5 +1576,6 @@
     "password-reset-success": "Password reset",
     "new-password": "New password",
     "confirm-new-password": "Confirm new password",
-    "password-mismatch": "New password and confirmation does not match"
+    "password-mismatch": "New password and confirmation does not match",
+    "empty-activity-center": "Your chat notifications\nwill appear here"
 }
