@@ -1365,6 +1365,7 @@
     "add-private-key-account": "Add account from private key",
     "profile-not-found": "Profile not found",
     "waku-bloom-filter-mode": "Waku bloom filter mode",
+    "wakuv2-flag": "Enable Waku v2",
     "appearance": "Appearance",
     "preference": "Preference",
     "light": "Light",

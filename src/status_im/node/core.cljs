@@ -2,6 +2,7 @@
   (:require [re-frame.core :as re-frame]
             [status-im.ethereum.json-rpc :as json-rpc]
             [status-im.native-module.core :as status]
+            [clojure.string :as string]
             [status-im.utils.config :as config]
             [status-im.utils.fx :as fx]
             [status-im.utils.platform :as utils.platform]
@@ -69,6 +70,12 @@
     (conj $ custom-fleets)
     (reduce merge $)))
 
+(defn get-waku-fleet [fleet-key]
+  (let [fleets (:fleets (types/json->clj (js/require "./fleets.js")))
+        waku-fleet-key (if (string/includes? (name fleet-key) "prod")
+                         :wakuv2.prod :wakuv2.test)]
+    (get fleets waku-fleet-key)))
+
 (defn current-fleet-key [db]
   (keyword (get-in db [:multiaccount :fleet]
                    config/fleet)))
@@ -81,8 +88,10 @@
 (defn- get-multiaccount-node-config
   [{:keys [multiaccount :networks/networks :networks/current-network]
     :as db}]
-  (let [current-fleet-key (current-fleet-key db)
-        current-fleet (get-current-fleet db)
+  (let [wakuv2-config (get multiaccount :wakuv2-config {})
+        wakuv2-enabled (get wakuv2-config :Enabled false)
+        current-fleet-key (current-fleet-key db)
+        current-fleet (merge (get-waku-fleet current-fleet-key) (get-current-fleet db))
         rendezvous-nodes (pick-nodes 3 (vals (:rendezvous current-fleet)))
         {:keys [installation-id log-level
                 waku-bloom-filter-mode
@@ -93,19 +102,22 @@
       (get-base-node-config)
 
       current-fleet
-      (assoc :NoDiscovery   false
-             :Rendezvous    (boolean (seq rendezvous-nodes))
+      (assoc :NoDiscovery   wakuv2-enabled
+             :Rendezvous    (if wakuv2-enabled false (boolean (seq rendezvous-nodes)))
              :ClusterConfig {:Enabled true
                              :Fleet              (name current-fleet-key)
                              :BootNodes
-                             (pick-nodes 4 (vals (:boot current-fleet)))
+                             (if wakuv2-enabled [] (pick-nodes 4 (vals (:boot current-fleet))))
                              :TrustedMailServers
-                             (pick-nodes 6 (vals (:mail current-fleet)))
+                             (if wakuv2-enabled [] (pick-nodes 6 (vals (:mail current-fleet))))
                              :StaticNodes
-                             (into (pick-nodes 2
-                                               (vals (:whisper current-fleet)))
-                                   (vals (:static current-fleet)))
-                             :RendezvousNodes    rendezvous-nodes})
+                             (if wakuv2-enabled []
+                                 (into (pick-nodes 2
+                                                   (vals (:whisper current-fleet)))
+                                       (vals (:static current-fleet))))
+                             :WakuNodes (vals (:waku current-fleet))
+                             :WakuStoreNodes (vals (:waku current-fleet))
+                             :RendezvousNodes    (if wakuv2-enabled [] rendezvous-nodes)})
 
       :always
       (assoc :WalletConfig {:Enabled true}
@@ -119,6 +131,7 @@
               :BloomFilterMode waku-bloom-filter-mode
               :LightClient true
               :MinimumPoW 0.000001}
+             :WakuV2Config (assoc wakuv2-config :Enabled wakuv2-enabled :Host "0.0.0.0")
              :ShhextConfig
              {:BackupDisabledDataDir      (utils.platform/no-backup-directory)
               :InstallationID             installation-id

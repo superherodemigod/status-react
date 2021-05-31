@@ -14,3 +14,10 @@
             (node/prepare-new-config
              {:on-success #(re-frame/dispatch [:logout])})))
 
+(fx/defn switch-wakuv2
+  {:events [:multiaccounts.ui/wakuv2-switched]}
+  [{:keys [db] :as cofx}  enabled?]
+  (fx/merge cofx
+            {:db (assoc-in db [:multiaccount :wakuv2-config :Enabled] enabled?)}
+            (node/prepare-new-config
+             {:on-success #(re-frame/dispatch [:logout])})))

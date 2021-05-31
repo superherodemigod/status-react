@@ -10,6 +10,7 @@
 (defn- normal-mode-settings-data [{:keys [network-name
                                           current-log-level
                                           waku-bloom-filter-mode
+                                          wakuv2-flag
                                           communities-enabled?
                                           current-fleet
                                           webview-debug]}]
@@ -95,7 +96,16 @@
      #(re-frame/dispatch
        [:multiaccounts.ui/waku-bloom-filter-mode-switched (not waku-bloom-filter-mode)])
      :accessory               :switch
-     :active                  waku-bloom-filter-mode}]))
+     :active                  waku-bloom-filter-mode}
+    {:size                    :small
+     :title                   (i18n/label :t/wakuv2-flag)
+     :accessibility-label     :waku-v2-settings-switch
+     :container-margin-bottom 8
+     :on-press
+     #(re-frame/dispatch
+       [:multiaccounts.ui/wakuv2-switched (not wakuv2-flag)])
+     :accessory               :switch
+     :active                   wakuv2-flag}]))
 
 (defn- flat-list-data [options]
   (normal-mode-settings-data options))
@@ -109,6 +119,7 @@
   (views/letsubs [{:keys [webview-debug]} [:multiaccount]
                   network-name             [:network-name]
                   waku-bloom-filter-mode   [:waku/bloom-filter-mode]
+                  wakuv2-flag              [:waku/v2-flag]
                   communities-enabled?     [:communities/enabled?]
                   current-log-level        [:log-level/current-log-level]
                   current-fleet            [:fleets/current-fleet]]
@@ -120,6 +131,7 @@
                    :current-fleet          current-fleet
                    :dev-mode?              false
                    :waku-bloom-filter-mode waku-bloom-filter-mode
+                   :wakuv2-flag            wakuv2-flag
                    :webview-debug          webview-debug})
       :key-fn    (fn [_ i] (str i))
       :render-fn render-item}]))
