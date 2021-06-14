@@ -108,9 +108,7 @@
 
 (def components
   [{:name      :chat-toolbar
-    :component chat/topbar}
-   {:name      :pin-toolbar
-    :component pin-messages/pins-topbar}])
+    :component chat/topbar}])
 
 (defn right-button-options [id icon]
   {:id   id
