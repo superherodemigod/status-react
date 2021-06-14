@@ -4,14 +4,12 @@
             [re-frame.core :as re-frame]
             [status-im.i18n.i18n :as i18n]
             [status-im.utils.datetime :as datetime]
-            [status-im.ui.screens.chat.styles.input.gap :as style]
-            [status-im.chat.models.pin-message :as models.pin-message]))
+            [status-im.ui.screens.chat.styles.input.gap :as style]))
 
 (defn on-press
   [chat-id gap-ids]
   (fn []
-    (re-frame/dispatch [:chat.ui/fill-gaps chat-id gap-ids])
-    (re-frame/dispatch [::models.pin-message/load-pin-messages chat-id])))
+    (re-frame/dispatch [:chat.ui/fill-gaps chat-id gap-ids])))
 
 (views/defview gap
   [{:keys [gap-ids chat-id gap-parameters]}]

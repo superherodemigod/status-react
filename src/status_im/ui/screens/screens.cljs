@@ -212,7 +212,7 @@
                                      :rightButtons (right-button-options :chat :more)}}
             :right-handler chat/topbar-button
             :component     chat/chat}
-           
+
            ;Pinned messages
            {:name          :chat-pinned-messages
             :options       {:topBar {:visible false}}

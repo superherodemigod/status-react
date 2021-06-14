@@ -47,7 +47,7 @@
 
                                        (and (some? pinned) (some? current-message))
                                        (assoc message_id current-message-pin))))
-                                 {}
+                                 already-loaded-pin-messages
                                  pin-messages)]
         {:db (-> db
                  (assoc-in [:pin-messages chat-id] all-messages)
