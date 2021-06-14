@@ -56,7 +56,7 @@
 (defn render-pin-fn [{:keys [outgoing type] :as message}
                      idx
                      _
-                     {:keys [group-chat public? current-public-key space-keeper chat-id show-input?]}]
+                     {:keys [group-chat public? current-public-key space-keeper chat-id show-input? message-pin-enabled]}]
   [react/view
    (if (= type :datemark)
      [message-datemark/chat-datemark (:value message)]
@@ -70,6 +70,7 @@
                :public? public?
                :current-public-key current-public-key
                :show-input? show-input?
+               :message-pin-enabled message-pin-enabled
                :pinned true)
         space-keeper]))])
 
@@ -77,9 +78,17 @@
 (def list-ref #(reset! messages-list-ref %))
 
 (defn pinned-messages-view [{:keys [chat bottom-space space-keeper show-input?]}]
-  (let [{:keys [group-chat chat-id public?]} chat
+  (let [{:keys [group-chat chat-id public? community-id admins]} chat
         pinned-messages @(re-frame/subscribe [:chats/raw-chat-pin-messages-stream chat-id])
-        current-public-key @(re-frame/subscribe [:multiaccount/public-key])]
+        current-public-key @(re-frame/subscribe [:multiaccount/public-key])
+        community @(re-frame/subscribe [:communities/community community-id])
+        group-admin? (get admins current-public-key)
+        community-admin? (when community (community :admin))
+        message-pin-enabled (and (not public?)
+                                 (or (not group-chat)
+                                     (and group-chat
+                                          (or group-admin?
+                                              community-admin?))))]
     ;;do not use anonymous functions for handlers
     (if (= (count pinned-messages) 0)
       [pinned-messages-empty]
@@ -87,12 +96,13 @@
        {:key-fn                       list-key-fn
         :ref                          list-ref
         :data                         (reverse pinned-messages)
-        :render-data                  {:group-chat         group-chat
-                                       :public?            public?
-                                       :current-public-key current-public-key
-                                       :space-keeper       space-keeper
-                                       :chat-id            chat-id
-                                       :show-input?        show-input?}
+        :render-data                  {:group-chat          group-chat
+                                       :public?             public?
+                                       :current-public-key  current-public-key
+                                       :space-keeper        space-keeper
+                                       :chat-id             chat-id
+                                       :show-input?         show-input?
+                                       :message-pin-enabled message-pin-enabled}
         :render-fn                    render-pin-fn
         :on-scroll-to-index-failed    identity              ;;don't remove this
         :content-container-style      {:padding-top 16

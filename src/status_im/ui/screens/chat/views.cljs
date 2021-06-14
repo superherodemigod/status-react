@@ -237,7 +237,7 @@
 (defn render-fn [{:keys [outgoing type] :as message}
                  idx
                  _
-                 {:keys [group-chat public? current-public-key space-keeper chat-id show-input? community-id admins]}]
+                 {:keys [group-chat public? current-public-key space-keeper chat-id show-input? message-pin-enabled]}]
   [react/view {:style (when platform/android? {:scaleY -1})}
    (if (= type :datemark)
      [message-datemark/chat-datemark (:value message)]
@@ -251,8 +251,7 @@
                :public? public?
                :current-public-key current-public-key
                :show-input? show-input?
-               :from-community community-id
-               :admins admins)
+               :message-pin-enabled message-pin-enabled)
         space-keeper]))])
 
 (def list-key-fn #(or (:message-id %) (:value %)))
@@ -270,8 +269,17 @@
 (defn messages-view [{:keys [chat bottom-space pan-responder space-keeper show-input?]}]
   (let [{:keys [group-chat chat-id public? community-id admins]} chat
         messages @(re-frame/subscribe [:chats/chat-messages-stream chat-id])
-        current-public-key @(re-frame/subscribe [:multiaccount/public-key])]
+        current-public-key @(re-frame/subscribe [:multiaccount/public-key])
+        community @(re-frame/subscribe [:communities/community community-id])
+        group-admin? (get admins current-public-key)
+        community-admin? (when community (community :admin))
+        message-pin-enabled (and (not public?)
+                                 (or (not group-chat)
+                                     (and group-chat
+                                          (or group-admin?
+                                              community-admin?))))]
     ;;do not use anonymous functions for handlers
+
     [list/flat-list
      (merge
       pan-responder
@@ -280,14 +288,13 @@
        :header                       [list-header chat]
        :footer                       [list-footer chat]
        :data                         messages
-       :render-data                  {:group-chat         group-chat
-                                      :public?            public?
-                                      :current-public-key current-public-key
-                                      :space-keeper       space-keeper
-                                      :chat-id            chat-id
-                                      :show-input?        show-input?
-                                      :community-id       community-id
-                                      :admins             admins}
+       :render-data                  {:group-chat          group-chat
+                                      :public?             public?
+                                      :current-public-key  current-public-key
+                                      :space-keeper        space-keeper
+                                      :chat-id             chat-id
+                                      :show-input?         show-input?
+                                      :message-pin-enabled message-pin-enabled}
        :render-fn                    render-fn
        :on-viewable-items-changed    on-viewable-items-changed
        :on-end-reached               list-on-end-reached

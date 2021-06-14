@@ -368,17 +368,6 @@
 (def message-height-px 200)
 (def max-message-height-px 150)
 
-(defn message-pin-enabled [{:keys [public? group-chat from-community admins]}]
-  (let [current-pk @(re-frame/subscribe [:multiaccount/public-key])
-        community @(re-frame/subscribe [:communities/community from-community])
-        group-admin? (get admins current-pk)
-        community-admin? (when community (community :admin))]
-    (and (not public?)
-         (or (not group-chat)
-             (and group-chat
-                  (or group-admin?
-                      community-admin?))))))
-
 (defn pin-message [{:keys [chat-id pinned] :as message}]
   (let [pinned-messages @(re-frame/subscribe [:chats/pinned chat-id])]
     (if (and (not pinned) (> (count pinned-messages) 2))
@@ -389,7 +378,7 @@
                                            :prevent-closing? true}]))
       (re-frame/dispatch [::models.pin-message/send-pin-message (assoc message :pinned (not pinned))]))))
 
-(defn on-long-press-fn [on-long-press {:keys [pinned] :as message} content]
+(defn on-long-press-fn [on-long-press {:keys [pinned message-pin-enabled] :as message} content]
   (on-long-press
    (concat
     (when (:show-input? message)
@@ -399,8 +388,8 @@
                   (components.reply/get-quoted-text-with-mentions
                    (get content :parsed-text)))
       :label    (i18n/label :t/sharing-copy-to-clipboard)}]
-    (when (message-pin-enabled message) [{:on-press #(pin-message message)
-                                          :label    (if pinned (i18n/label :t/unpin) (i18n/label :t/pin))}]))))
+    (when message-pin-enabled [{:on-press #(pin-message message)
+                                :label    (if pinned (i18n/label :t/unpin) (i18n/label :t/pin))}]))))
 
 (defn collapsible-text-message [{:keys [mentioned]} _]
   (let [collapsed?   (reagent/atom false)
@@ -476,8 +465,8 @@
       (-> content :parsed-text peek :children))]]])
 
 (defmethod ->message constants/content-type-emoji
-  [{:keys [content current-public-key outgoing public? pinned in-popover?] :as message} {:keys [on-long-press modal]
-                                                                                         :as   reaction-picker}]
+  [{:keys [content current-public-key outgoing public? pinned in-popover? message-pin-enabled] :as message} {:keys [on-long-press modal]
+                                                                                                             :as   reaction-picker}]
   (let [response-to (:response-to content)]
     [message-content-wrapper message
      [react/touchable-highlight (when-not modal
@@ -491,8 +480,8 @@
                                                         :label    (i18n/label :t/message-reply)}
                                                        {:on-press #(react/copy-to-clipboard (get content :text))
                                                         :label    (i18n/label :t/sharing-copy-to-clipboard)}]
-                                                      (when (message-pin-enabled message) [{:on-press #(pin-message message)
-                                                                                            :label    (if pinned (i18n/label :t/unpin) (i18n/label :t/pin))}]))))})
+                                                      (when message-pin-enabled [{:on-press #(pin-message message)
+                                                                                  :label    (if pinned (i18n/label :t/unpin) (i18n/label :t/pin))}]))))})
       [react/view (style/message-view message)
        [react/view {:style (style/message-view-content)}
         [react/view {:style (style/style-message-text outgoing)}
