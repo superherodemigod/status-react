@@ -20,7 +20,7 @@
   (let [{:keys [group-chat chat-id chat-name]}
         @(re-frame/subscribe [:chats/current-chat])
         pinned-messages @(re-frame/subscribe [:chats/pinned chat-id])
-        [first-name _] @(re-frame.core/subscribe [:contacts/contact-two-names-by-identity chat-id])]
+        [first-name _] (when-not group-chat @(re-frame.core/subscribe [:contacts/contact-two-names-by-identity chat-id]))]
     [topbar/topbar {:show-border? true
                     :title        (if group-chat chat-name first-name)
                     :subtitle     (if (= (count pinned-messages) 0)
@@ -78,7 +78,7 @@
 
 (defn pinned-messages-view [{:keys [chat bottom-space space-keeper show-input?]}]
   (let [{:keys [group-chat chat-id public?]} chat
-        pinned-messages @(re-frame/subscribe [:chats/pinned-messages-stream chat-id])
+        pinned-messages @(re-frame/subscribe [:chats/raw-chat-pin-messages-stream chat-id])
         current-public-key @(re-frame/subscribe [:multiaccount/public-key])]
     ;;do not use anonymous functions for handlers
     (if (= (count pinned-messages) 0)

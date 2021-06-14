@@ -237,7 +237,7 @@
 (defn render-fn [{:keys [outgoing type] :as message}
                  idx
                  _
-                 {:keys [group-chat public? current-public-key space-keeper chat-id show-input?]}]
+                 {:keys [group-chat public? current-public-key space-keeper chat-id show-input? community-id admins]}]
   [react/view {:style (when platform/android? {:scaleY -1})}
    (if (= type :datemark)
      [message-datemark/chat-datemark (:value message)]
@@ -250,7 +250,9 @@
                :group-chat group-chat
                :public? public?
                :current-public-key current-public-key
-               :show-input? show-input?)
+               :show-input? show-input?
+               :from-community community-id
+               :admins admins)
         space-keeper]))])
 
 (def list-key-fn #(or (:message-id %) (:value %)))
@@ -266,7 +268,7 @@
                        (if platform/low-device? 700 200))))
 
 (defn messages-view [{:keys [chat bottom-space pan-responder space-keeper show-input?]}]
-  (let [{:keys [group-chat chat-id public?]} chat
+  (let [{:keys [group-chat chat-id public? community-id admins]} chat
         messages @(re-frame/subscribe [:chats/chat-messages-stream chat-id])
         current-public-key @(re-frame/subscribe [:multiaccount/public-key])]
     ;;do not use anonymous functions for handlers
@@ -283,7 +285,9 @@
                                       :current-public-key current-public-key
                                       :space-keeper       space-keeper
                                       :chat-id            chat-id
-                                      :show-input?        show-input?}
+                                      :show-input?        show-input?
+                                      :community-id       community-id
+                                      :admins             admins}
        :render-fn                    render-fn
        :on-viewable-items-changed    on-viewable-items-changed
        :on-end-reached               list-on-end-reached

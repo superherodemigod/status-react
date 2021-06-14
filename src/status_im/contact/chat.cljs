@@ -28,7 +28,6 @@
                  (contact/name-verified % public-key ens-name)))))
 
 (fx/defn pinned-messages-pressed
-  {:events       [:contact.ui/pinned-messages-pressed]
-   :interceptors [(re-frame/inject-cofx :random-id-generator)]}
+  {:events       [:contact.ui/pinned-messages-pressed]}
   [cofx public-key]
   (chat/navigate-to-user-pinned-messages cofx public-key))

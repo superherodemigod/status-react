@@ -1055,22 +1055,14 @@
 (def memo-timeline-messages-stream (atom nil))
 
 (re-frame/reg-sub
- :chats/pinned-messages-stream
- (fn [[_ chat-id] _]
-   [(re-frame/subscribe [:chats/raw-chat-pin-messages-stream chat-id])])
- (fn [[messages]]
-   messages))
-
-(re-frame/reg-sub
  :chats/timeline-messages-stream
  :<- [:chats/message-list constants/timeline-chat-id]
  :<- [:chats/chat-messages constants/timeline-chat-id]
- :<- [:chats/pinned constants/timeline-chat-id]
  :<- [:view-id]
- (fn [[message-list messages pinned-messages view-id]]
+ (fn [[message-list messages view-id]]
    (if (= view-id :status)
      (let [res (-> (models.message-list/->seq message-list)
-                   (hydrate-messages messages pinned-messages))]
+                   (hydrate-messages messages))]
        (reset! memo-timeline-messages-stream res)
        res)
      @memo-timeline-messages-stream)))
