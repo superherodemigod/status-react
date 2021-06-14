@@ -212,9 +212,10 @@
             :component     chat/chat}
 
            ;Pinned messages
-           {:name          :chat-pinned-messages
-            :options       {:topBar {:visible false}}
-            :component     pin-messages/pinned-messages}
+           {:name      :chat-pinned-messages
+            ;TODO custom subtitle
+            :options   {:topBar {:visible false}}
+            :component pin-messages/pinned-messages}
 
            {:name      :group-chat-profile
             :insets    {:top false}
