@@ -1075,6 +1075,12 @@
    (:responding-to-message metadata)))
 
 (re-frame/reg-sub
+ :chats/edit-message
+ :<- [:chats/current-chat-inputs]
+ (fn [{:keys [metadata]}]
+   (:editing-message metadata)))
+
+(re-frame/reg-sub
  :chats/sending-image
  :<- [:chats/current-chat-inputs]
  (fn [{:keys [metadata]}]
