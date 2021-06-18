@@ -37,7 +37,7 @@
   ([message]
    [message-timestamp message false])
   ([{:keys [timestamp-str outgoing content outgoing-status pinned in-popover?]} justify-timestamp?]
-   (when-not in-popover?
+   (when-not in-popover? ;; We keep track if showing this message in a list in pin-limit-popover
      [react/view (when justify-timestamp?
                    {:align-self                       :flex-end
                     :position                         :absolute
@@ -546,7 +546,7 @@
    [unknown-content-type message]])
 
 (defn chat-message [{:keys [outgoing display-photo? pinned pinned-by] :as message} space-keeper]
-  [react/view
+  [:<>
    [reactions/with-reaction-picker
     {:message         message
      :reactions       @(re-frame/subscribe [:chats/message-reactions (:message-id message) (:chat-id message)])
