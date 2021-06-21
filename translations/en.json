@@ -1578,5 +1578,6 @@
     "new-password": "New password",
     "confirm-new-password": "Confirm new password",
     "password-mismatch": "New password and confirmation does not match",
-    "terms-of-service": "Terms of service"
+    "terms-of-service": "Terms of service",
+    "accept-status-tos-prefix": "I accept Status"
 }
