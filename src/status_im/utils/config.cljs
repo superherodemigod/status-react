@@ -155,3 +155,4 @@
 
 (def privacy-policy-link "https://status.im/privacy-policy/")
 (def terms-of-service-link "https://status.im/terms-of-service")
+(def docs-link "https://status.im/docs/")

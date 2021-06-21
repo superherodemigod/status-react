@@ -7,6 +7,7 @@
             [status-im.i18n.i18n :as i18n]
             [status-im.react-native.resources :as resources]
             [quo.core :as quo]
+            [quo.design-system.typography :as typography]
             [re-frame.core :as re-frame]
             [status-im.ui.components.colors :as colors]))
 
@@ -158,7 +159,8 @@
      [rn/touchable-opacity {:on-press #(swap! tos-accepted not)}
       [react/nested-text {:style {:margin-left 12}}
        (i18n/label :t/accept-status-tos-prefix)
-       [{:style    {:color colors/blue}
+       [{:style    (merge {:color colors/blue}
+                          typography/font-medium)
          :on-press #(re-frame/dispatch [:open-modal :terms-of-service])}
         " "
         (i18n/label :t/terms-of-service)]]]]

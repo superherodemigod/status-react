@@ -98,6 +98,7 @@
             [status-im.ui.screens.keycard.pairing.views :as keycard.pairing]
             [status-im.ui.screens.keycard.settings.views :as keycard.settings]
             [status-im.ui.screens.appearance.views :as appearance]
+            [status-im.ui.screens.terms-of-service.views :as terms-of-service]
             [status-im.ui.screens.privacy-and-security-settings.delete-profile :as delete-profile]
             [status-im.ui.screens.default-sync-period-settings.view :as default-sync-period-settings]
             [status-im.ui.screens.communities.channel-details :as communities.channel-details]
@@ -452,6 +453,9 @@
            {:name      :terms-of-service
             :options {:topBar {:title {:text (i18n/label :t/terms-of-service)}}}
             :component about-app/tos}
+           {:name      :force-accept-tos
+            :options   {:topBar {:visible false}}
+            :component terms-of-service/force-accept-tos}
            {:name      :manage-dapps-permissions
             ;;TODO dynamic title
             :options   {:topBar {:visible false}}
