@@ -7,7 +7,6 @@
             [status-im.react-native.resources :as resources]
             [quo.core :as quo]
             [re-frame.core :as re-frame]
-            [status-im.privacy-policy.core :as privacy-policy]
             [status-im.ui.components.colors :as colors]))
 
 (defonce index (reagent/atom 0))
@@ -138,13 +137,13 @@
   [react/view {:style styles/intro-view}
    [carousel [{:image (resources/get-theme-image :chat)
                :title :intro-title1
-               :text :intro-text1}
+               :text  :intro-text1}
               {:image (resources/get-theme-image :wallet)
                :title :intro-title2
-               :text :intro-text2}
+               :text  :intro-text2}
               {:image (resources/get-theme-image :browser)
                :title :intro-title3
-               :text :intro-text3}]
+               :text  :intro-text3}]
     @(re-frame/subscribe [:dimensions/window-width])]
    [react/view styles/buttons-container
     [react/view {:style (assoc styles/bottom-button :margin-bottom 16)}
@@ -154,5 +153,5 @@
      {:style styles/welcome-text-bottom-note}
      (i18n/label :t/intro-privacy-policy-note1)
      [{:style    (assoc styles/welcome-text-bottom-note :color colors/blue)
-       :on-press privacy-policy/open-privacy-policy-link!}
+       :on-press #(re-frame/dispatch [:open-modal :privacy-policy])}
       (i18n/label :t/intro-privacy-policy-note2)]]]])

@@ -1577,5 +1577,6 @@
     "password-reset-success": "Password reset",
     "new-password": "New password",
     "confirm-new-password": "Confirm new password",
-    "password-mismatch": "New password and confirmation does not match"
+    "password-mismatch": "New password and confirmation does not match",
+    "terms-of-service": "Terms of service"
 }

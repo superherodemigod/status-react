@@ -446,6 +446,12 @@
            {:name      :about-app
             :options   {:topBar {:title {:text (i18n/label :t/about-app)}}}
             :component about-app/about-app}
+           {:name      :privacy-policy
+            :options {:topBar {:title {:text (i18n/label :t/privacy-policy)}}}
+            :component about-app/privacy-policy}
+           {:name      :terms-of-service
+            :options {:topBar {:title {:text (i18n/label :t/terms-of-service)}}}
+            :component about-app/tos}
            {:name      :manage-dapps-permissions
             ;;TODO dynamic title
             :options   {:topBar {:visible false}}
