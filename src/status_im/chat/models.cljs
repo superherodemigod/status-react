@@ -207,15 +207,7 @@
   "Takes chat-id and coeffects map, returns effects necessary when navigating to chat"
   {:events [:chat.ui/preload-chat-data]}
   [{:keys [db] :as cofx} chat-id]
-  (fx/merge cofx
-            (loading/load-messages chat-id)
-            (pin-message/load-pin-messages chat-id)))
-
-(fx/defn preload-chat-pin-data
-  "Takes chat-id and coeffects map, returns effects necessary for preloading pinned messages"
-  {:events [:chat.ui/preload-chat-pin-data]}
-  [{:keys [db] :as cofx} chat-id]
-  (pin-message/load-pin-messages chat-id))
+  (loading/load-messages cofx chat-id))
 
 (fx/defn navigate-to-chat
   "Takes coeffects map and chat-id, returns effects necessary for navigation and preloading data"
@@ -247,7 +239,6 @@
   [{db :db :as cofx} chat-id]
   (fx/merge cofx
             {:db (assoc db :current-chat-id chat-id)}
-            (preload-chat-data chat-id)
             (navigation/navigate-to :chat-pinned-messages nil)))
 
 (fx/defn start-chat
