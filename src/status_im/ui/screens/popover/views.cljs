@@ -19,7 +19,7 @@
             [status-im.ui.components.colors :as colors]
             [status-im.ui.screens.keycard.views :as keycard.views]
             [status-im.ui.screens.keycard.frozen-card.view :as frozen-card]
-            [status-im.ui.screens.chat.message.message :as message]))
+            [status-im.ui.screens.chat.message.pinned-message :as pinned-message]))
 
 (defn hide-panel-anim
   [bottom-anim-value alpha-value window-height]
@@ -171,7 +171,7 @@
                    [multiaccounts.key-storage/unknown-error-popover]
 
                    (= :pin-limit view)
-                   [message/pin-limit-popover]
+                   [pinned-message/pin-limit-popover]
 
                    :else
                    [view])]]]]])))})))

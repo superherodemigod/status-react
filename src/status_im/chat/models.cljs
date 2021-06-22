@@ -15,8 +15,7 @@
             [status-im.utils.types :as types]
             [status-im.add-new.db :as new-public-chat.db]
             [status-im.chat.models.loading :as loading]
-            [status-im.ui.screens.chat.state :as chat.state]
-            [status-im.chat.models.pin-message :as pin-message]))
+            [status-im.ui.screens.chat.state :as chat.state]))
 
 (defn chats []
   (:chats (types/json->clj (js/require "./chats.js"))))
