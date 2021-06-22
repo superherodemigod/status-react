@@ -975,8 +975,9 @@
             (when-let [message (messages (% :message-id))]
               (let [pinned-message (get pinned-messages (% :message-id))
                     pinned (if pinned-message true (some? (message :pinned-by)))
-                    pinned-by (when pinned (or (message :pinned-by) (pinned-message :pinned-by)))]
-                (merge message % {:pinned pinned :pinned-by pinned-by})))
+                    pinned-by (when pinned (or (message :pinned-by) (pinned-message :pinned-by)))
+                    message (assoc message :pinned pinned :pinned-by pinned-by)]
+                (merge message %)))
             %)
          message-list)))
 
