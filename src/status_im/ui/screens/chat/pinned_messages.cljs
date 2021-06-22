@@ -3,18 +3,17 @@
             [reagent.core :as reagent]
             [status-im.i18n.i18n :as i18n]
             [status-im.ui.components.connectivity.view :as connectivity]
-            [status-im.ui.components.list.views :as list]
             [status-im.ui.components.react :as react]
             [quo.animated :as animated]
             [status-im.ui.screens.chat.message.message :as message]
             [status-im.ui.screens.chat.styles.main :as style]
-            [status-im.ui.screens.chat.state :as state]
             [status-im.ui.screens.chat.message.gap :as gap]
             [status-im.ui.screens.chat.components.accessory :as accessory]
             [status-im.ui.screens.chat.message.datemark :as message-datemark]
             [status-im.utils.platform :as platform]
             [quo.react :as quo.react]
-            [status-im.ui.components.topbar :as topbar]))
+            [status-im.ui.components.topbar :as topbar]
+            [status-im.ui.screens.chat.views :as chat]))
 
 (defn pins-topbar []
   (let [{:keys [group-chat chat-id chat-name]}
@@ -74,46 +73,6 @@
                :pinned true)
         space-keeper]))])
 
-(def list-key-fn #(or (:message-id %) (:value %)))
-(def list-ref #(reset! messages-list-ref %))
-
-(defn pinned-messages-view [{:keys [chat bottom-space space-keeper show-input?]}]
-  (let [{:keys [group-chat chat-id public? community-id admins]} chat
-        pinned-messages @(re-frame/subscribe [:chats/raw-chat-pin-messages-stream chat-id])
-        current-public-key @(re-frame/subscribe [:multiaccount/public-key])
-        community @(re-frame/subscribe [:communities/community community-id])
-        group-admin? (get admins current-public-key)
-        community-admin? (when community (community :admin))
-        message-pin-enabled (and (not public?)
-                                 (or (not group-chat)
-                                     (and group-chat
-                                          (or group-admin?
-                                              community-admin?))))]
-    ;;do not use anonymous functions for handlers
-    (if (= (count pinned-messages) 0)
-      [pinned-messages-empty]
-      [list/flat-list
-       {:key-fn                       list-key-fn
-        :ref                          list-ref
-        :data                         (reverse pinned-messages)
-        :render-data                  {:group-chat          group-chat
-                                       :public?             public?
-                                       :current-public-key  current-public-key
-                                       :space-keeper        space-keeper
-                                       :chat-id             chat-id
-                                       :show-input?         show-input?
-                                       :message-pin-enabled message-pin-enabled}
-        :render-fn                    render-pin-fn
-        :on-scroll-to-index-failed    identity              ;;don't remove this
-        :content-container-style      {:padding-top 16
-                                       :padding-bottom 16}
-        :scroll-indicator-insets      {:top bottom-space}    ;;ios only
-        :keyboard-dismiss-mode        :interactive
-        :keyboard-should-persist-taps :handled
-        :onMomentumScrollBegin        state/start-scrolling
-        :onMomentumScrollEnd          state/stop-scrolling
-        :style                        (when platform/android? {:scaleX 1})}])))
-
 (defn pinned-messages []
   (let [bottom-space (reagent/atom 0)
         panel-space (reagent/atom 52)
@@ -124,13 +83,20 @@
         pan-responder (accessory/create-pan-responder position-y pan-state)
         space-keeper (get-space-keeper-ios bottom-space panel-space active-panel text-input-ref)]
     (fn []
-      (let [chat
-            @(re-frame/subscribe [:chats/current-chat-chat-view])
-            max-bottom-space (max @bottom-space @panel-space)]
+      (let [{:keys [chat-id] :as chat} @(re-frame/subscribe [:chats/current-chat-chat-view])
+            max-bottom-space (max @bottom-space @panel-space)
+            pinned-messages (re-frame/subscribe [:chats/raw-chat-pin-messages-stream chat-id])]
         [:<>
          [pins-topbar]
          [connectivity/loading-indicator]
-         [pinned-messages-view {:chat          chat
+         (if (= (count @pinned-messages) 0)
+           [pinned-messages-empty]
+           [chat/messages-view {:chat          chat
                                 :bottom-space  max-bottom-space
                                 :pan-responder pan-responder
-                                :space-keeper  space-keeper}]]))))
+                                :space-keeper  space-keeper
+                                :inverted-ui   true
+                                :show-header   false
+                                :show-footer   false}
+            pinned-messages
+            render-pin-fn])]))))

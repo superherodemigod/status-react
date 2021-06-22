@@ -266,9 +266,8 @@
     (utils/set-timeout #(re-frame/dispatch [:chat.ui/load-more-messages-for-current-chat])
                        (if platform/low-device? 700 200))))
 
-(defn messages-view [{:keys [chat bottom-space pan-responder space-keeper show-input?]}]
+(defn messages-view [{:keys [chat bottom-space pan-responder space-keeper show-input? inverted-ui show-header show-footer]} messages render-fn]
   (let [{:keys [group-chat chat-id public? community-id admins]} chat
-        messages @(re-frame/subscribe [:chats/chat-messages-stream chat-id])
         current-public-key @(re-frame/subscribe [:multiaccount/public-key])
         community @(re-frame/subscribe [:communities/community community-id])
         group-admin? (get admins current-public-key)
@@ -279,15 +278,14 @@
                                           (or group-admin?
                                               community-admin?))))]
     ;;do not use anonymous functions for handlers
-
     [list/flat-list
      (merge
       pan-responder
       {:key-fn                       list-key-fn
        :ref                          list-ref
-       :header                       [list-header chat]
-       :footer                       [list-footer chat]
-       :data                         messages
+       :header                       (when show-header [list-header chat])
+       :footer                       (when show-footer [list-footer chat])
+       :data                         (if inverted-ui (reverse @messages) @messages)
        :render-data                  {:group-chat          group-chat
                                       :public?             public?
                                       :current-public-key  current-public-key
@@ -299,7 +297,7 @@
        :on-viewable-items-changed    on-viewable-items-changed
        :on-end-reached               list-on-end-reached
        :on-scroll-to-index-failed    identity              ;;don't remove this
-       :content-container-style      {:padding-top (+ bottom-space 16)
+       :content-container-style      {:padding-top (+ (when-not inverted-ui bottom-space) 16)
                                       :padding-bottom 16}
        :scroll-indicator-insets      {:top bottom-space}    ;;ios only
        :keyboard-dismiss-mode        :interactive
@@ -307,8 +305,8 @@
        :onMomentumScrollBegin        state/start-scrolling
        :onMomentumScrollEnd          state/stop-scrolling
        ;;TODO https://github.com/facebook/react-native/issues/30034
-       :inverted                     (when platform/ios? true)
-       :style                        (when platform/android? {:scaleY -1})})]))
+       :inverted                     (when (and (not inverted-ui) platform/ios?) true)
+       :style                        (when platform/android? {:scaleY (if inverted-ui 1 -1)})})]))
 
 (defn topbar-button []
   (re-frame/dispatch [:bottom-sheet/show-sheet
@@ -331,7 +329,8 @@
         pan-responder (accessory/create-pan-responder position-y pan-state)
         space-keeper (get-space-keeper-ios bottom-space panel-space active-panel text-input-ref)
         set-active-panel (get-set-active-panel active-panel)
-        on-close #(set-active-panel nil)]
+        on-close #(set-active-panel nil)
+        messages (re-frame/subscribe [:chats/chat-messages-stream curr-chat-id])]
     (reagent/create-class
      {:component-will-unmount #(re-frame/dispatch-sync [:close-chat curr-chat-id])
       :component-did-mount (fn [] (js/setTimeout #(re-frame/dispatch [:set :ignore-close-chat false]) 1000))
@@ -352,7 +351,12 @@
                            :bottom-space  max-bottom-space
                            :pan-responder pan-responder
                            :space-keeper  space-keeper
-                           :show-input?   show-input?}]
+                           :show-input?   show-input?
+                           :inverted-ui   false
+                           :show-header   true
+                           :show-footer   true}
+            messages
+            render-fn]
            (when (and group-chat invitation-admin)
              [accessory/view {:y               position-y
                               :on-update-inset on-update}
