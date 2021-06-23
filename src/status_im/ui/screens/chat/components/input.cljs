@@ -176,7 +176,7 @@
 
 (re-frame/reg-fx
  ::set-input-text
- (fn [chat-id text]
+ (fn [[chat-id text]]
    ;; We enable mentions
    (swap! mentions-enabled assoc chat-id true)
    (on-text-change text chat-id)
