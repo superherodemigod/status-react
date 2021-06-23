@@ -245,7 +245,6 @@
       :blur-on-submit           false
       :auto-focus               false
       :on-focus                 #(set-active-panel nil)
-      :key                      (str @chat-input-key)
       :max-length               chat.constants/max-text-size
       :placeholder-text-color   (:text-02 @colors/theme)
       :placeholder              (if cooldown-enabled?
@@ -347,6 +346,7 @@
         send-ref (quo.react/create-ref)
         sticker-ref (quo.react/create-ref)
         toolbar-options (re-frame/subscribe [:chats/chat-toolbar])]
+    ^{:key (str @chat-input-key "chat-input")}
     (fn [{:keys [active-panel set-active-panel text-input-ref chat-id]}]
       (let [;we want to control components on native level, so instead of RN state we set native props via reference
             ;we don't react on input text in this view, @input-texts below is a regular atom
