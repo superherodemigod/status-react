@@ -5,7 +5,7 @@
             [status-im.ui.components.copyable-text :as copyable-text]
             [status-im.ui.components.icons.icons :as icons]
             [status-im.ui.components.webview :refer [webview]]
-            [status-im.utils.config :refer [privacy-policy-link terms-of-service-link]]
+            [status-im.constants :refer [privacy-policy-link terms-of-service-link]]
             [quo.core :as quo]
             [status-im.ui.components.react :as react])
   (:require-macros [status-im.utils.views :as views]))
@@ -46,10 +46,10 @@
 
 (views/defview learn-more-sheet []
   (views/letsubs [{:keys [title content]} [:bottom-sheet/options]]
-    [react/view {:style {:padding-left 16 :padding-top 16
+    [react/view {:style {:padding-left  16 :padding-top    16
                          :padding-right 34 :padding-bottom 0}}
      [react/view {:style {:align-items :center :flex-direction :row :margin-bottom 16}}
-      [icons/icon :main-icons/info {:color colors/blue
+      [icons/icon :main-icons/info {:color           colors/blue
                                     :container-style {:margin-right 13}}]
       [react/text {:style {:typography :title-bold}} title]]
      [react/text {:style {:color colors/gray}} content]]))

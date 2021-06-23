@@ -28,7 +28,8 @@
 (fx/defn initialize-views
   {:events [::initialize-view]}
   [cofx]
-  (let [{{:multiaccounts/keys [multiaccounts]} :db} cofx]
+  (let [{{:multiaccounts/keys [multiaccounts]
+          :tos/keys [opted-in-loading? accepted?]} :db} cofx]
     (if (and (seq multiaccounts))
       ;; We specifically pass a bunch of fields instead of the whole multiaccount
       ;; as we want store some fields in multiaccount that are not here
@@ -57,6 +58,7 @@
                              (assoc :multiaccounts/logout? logout?)
                              (assoc :multiaccounts/loading false))
                :dispatch-n [[::initialize-view]
+                            ;; NOTE <shivekkhurana>: This can be moved to :init/app-started for consistency
                             [::anon-metrics/fetch-opt-in-screen-displayed?]]})))
 
 (fx/defn start-app
@@ -67,7 +69,8 @@
              ::init-theme                           nil
              ::open-multiaccounts                   #(do
                                                        (re-frame/dispatch [::initialize-multiaccounts % {:logout? false}])
-                                                       (re-frame/dispatch [:get-keycard-banner-preference]))
+                                                       (re-frame/dispatch [:get-keycard-banner-preference])
+                                                       (re-frame/dispatch [:get-opted-in-to-new-terms-of-service]))
              :ui/listen-to-window-dimensions-change nil
              ::network/listen-to-network-info       nil
              :keycard/register-card-events          nil

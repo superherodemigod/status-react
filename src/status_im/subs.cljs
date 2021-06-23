@@ -720,6 +720,12 @@
          (string/blank? (security/safe-unmask-data seed))
          false))))
 
+;; (re-frame/reg-sub
+;;  :new-terms-of-service-opt-in-data
+;;  (fn [db]
+;;    (select-keys db [:opted-in-to-new-terms-of-service-loading?
+;;                     :new-terms-of-service-accepted?])))
+
 ;;CHAT ==============================================================================================================
 
 (re-frame/reg-sub

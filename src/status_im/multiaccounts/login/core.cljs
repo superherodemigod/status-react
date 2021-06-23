@@ -556,3 +556,26 @@
   [_]
   {::async-storage/get {:keys [:keycard-banner-hidden]
                         :cb   #(re-frame/dispatch [:get-keycard-banner-preference-cb %])}})
+
+(fx/defn get-opted-in-to-new-terms-of-service-cb
+  {:events [:get-opted-in-to-new-terms-of-service-cb]}
+  [{:keys [db]} {:keys [new-terms-of-service-accepted]}]
+  {:db (assoc db
+              :tos/opted-in-loading? false
+              :tos/accepted? new-terms-of-service-accepted)})
+
+(fx/defn get-opted-in-to-new-terms-of-service
+  "New TOS sprint https://github.com/status-im/status-react/pull/12240"
+  {:events [:get-opted-in-to-new-terms-of-service]}
+  [{:keys [db]}]
+  {:db                 (assoc db :tos/opted-in-loading? true)
+   ::async-storage/get {:keys [:new-terms-of-service-accepted]
+                        :cb   #(re-frame/dispatch [:get-opted-in-to-new-terms-of-service-cb %])}})
+
+(fx/defn hide-terms-of-services-opt-in-screen
+  {:events [:hide-terms-of-services-opt-screen]}
+  [{:keys [db]}]
+  {::async-storage/set! {:new-terms-of-service-accepted true}
+   :db                  (assoc db
+                               :tos/opted-in-loading? false
+                               :tos/accepted? true)})

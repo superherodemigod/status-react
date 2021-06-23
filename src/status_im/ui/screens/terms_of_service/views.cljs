@@ -4,8 +4,9 @@
             [quo.core :as quo]
             [quo.design-system.spacing :as spacing]
             [quo.design-system.typography :as typography]
+            [status-im.react-native.resources :as resources]
             [status-im.ui.components.icons.icons :as icons]
-            [status-im.utils.config :refer [docs-link]]
+            [status-im.constants :refer [docs-link]]
             [re-frame.core :as re-frame]
             [status-im.ui.components.colors :as colors]))
 
@@ -42,7 +43,7 @@
   [react/scroll-view
    [react/view {:style (merge {:align-items :center}
                               (:x-large spacing/padding-horizontal))}
-    [react/image {:source (js/require "../resources/images/tokens/mainnet/SNT.png")
+    [react/image {:source (resources/get-image :status-logo)
                   :style  {:margin-vertical (:base spacing/spacing)}}]
     [quo/text {:size   :x-large
                :align  :center
