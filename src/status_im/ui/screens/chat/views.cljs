@@ -359,6 +359,9 @@
               [react/view
                [edit/edit-message-auto-focus-wrapper text-input-ref]
                [reply/reply-message-auto-focus-wrapper text-input-ref]
+               ;; We set the key so we can force a re-render as
+               ;; it does not rely on ratom but just atoms
+               ^{:key (str @components/chat-input-key "chat-input")}
                [components/chat-toolbar
                 {:chat-id          chat-id
                  :active-panel     @active-panel

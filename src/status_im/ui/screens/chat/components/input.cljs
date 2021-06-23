@@ -180,8 +180,8 @@
    ;; We enable mentions
    (swap! mentions-enabled assoc chat-id true)
    (on-text-change text chat-id)
-    ;; We update the key so that we force a refresh of the text input, as those
-    ;; are not ratoms
+   ;; We update the key so that we force a refresh of the text input, as those
+   ;; are not ratoms
    (force-text-input-update!)))
 
 (fx/defn set-input-text
@@ -346,7 +346,6 @@
         send-ref (quo.react/create-ref)
         sticker-ref (quo.react/create-ref)
         toolbar-options (re-frame/subscribe [:chats/chat-toolbar])]
-    ^{:key (str @chat-input-key "chat-input")}
     (fn [{:keys [active-panel set-active-panel text-input-ref chat-id]}]
       (let [;we want to control components on native level, so instead of RN state we set native props via reference
             ;we don't react on input text in this view, @input-texts below is a regular atom
