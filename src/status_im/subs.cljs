@@ -1101,19 +1101,23 @@
  :<- [:current-chat/one-to-one-chat?]
  :<- [:current-chat/metadata]
  :<- [:chats/reply-message]
- (fn [[disconnected? {:keys [processing]} sending-image mainnet? one-to-one-chat? {:keys [public?]} reply]]
+ :<- [:chats/edit-message]
+ (fn [[disconnected? {:keys [processing]} sending-image mainnet? one-to-one-chat? {:keys [public?]} reply edit]]
    (let [sending-image (seq sending-image)]
      {:send          (and (not (or processing disconnected?)))
       :stickers      (and mainnet?
                           (not sending-image)
                           (not reply))
       :image         (and (not reply)
+                          (not edit)
                           (not public?))
       :extensions    (and one-to-one-chat?
                           (or config/commands-enabled? mainnet?)
+                          (not edit)
                           (not reply))
       :audio         (and (not sending-image)
                           (not reply)
+                          (not edit)
                           (not public?))
       :sending-image sending-image})))
 

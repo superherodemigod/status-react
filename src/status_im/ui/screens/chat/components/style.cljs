@@ -74,6 +74,15 @@
             (:icon-04 @colors/theme)
             (:icon-02 @colors/theme))})
 
+(defn reply-container-image []
+  {:border-top-left-radius     14
+   :border-top-right-radius    14
+   :border-bottom-right-radius 4
+   :border-bottom-left-radius  14
+   :margin                     2
+   :flex-direction             :row
+   :background-color           (:ui-03 @colors/theme)})
+
 (defn reply-container []
   {:flex-direction             :row})
 

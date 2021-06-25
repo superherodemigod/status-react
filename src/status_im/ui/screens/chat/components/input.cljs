@@ -175,7 +175,7 @@
       (re-frame/dispatch [::mentions/calculate-suggestions mentionable-users]))))
 
 (re-frame/reg-fx
- ::set-input-text
+ :set-input-text
  (fn [[chat-id text]]
    ;; We enable mentions
    (swap! mentions-enabled assoc chat-id true)
@@ -198,7 +198,7 @@
                                                            {:public-key mention})))]
                                    e)) text-with-mentions)
         info (mentions/->info hydrated-mentions)]
-    {::set-input-text [chat-id text]
+    {:set-input-text [chat-id text]
      :db
      (-> db
          (assoc-in [:chats/cursor chat-id] (:mention-end info))

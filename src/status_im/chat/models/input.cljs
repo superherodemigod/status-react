@@ -115,6 +115,7 @@
               {:db (-> db
                        (assoc-in [:chat/inputs current-chat-id :metadata :responding-to-message]
                                  message)
+                       (assoc-in [:chat/inputs current-chat-id :metadata :editing-message] nil)
                        (update-in [:chat/inputs current-chat-id :metadata]
                                   dissoc :sending-image))})))
 
@@ -129,6 +130,7 @@
      :db (-> db
              (assoc-in [:chat/inputs current-chat-id :metadata :editing-message]
                        message)
+             (assoc-in [:chat/inputs current-chat-id :metadata :responding-to-message] nil)
              (update-in [:chat/inputs current-chat-id :metadata]
                         dissoc :sending-image))}))
 
@@ -179,6 +181,7 @@
   [{:keys [db] :as cofx}]
   (let [current-chat-id (:current-chat-id db)]
     (fx/merge cofx
+              {:set-input-text [current-chat-id ""]}
               (clean-input current-chat-id)
               (mentions/clear-mentions)
               (mentions/clear-cursor))))

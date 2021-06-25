@@ -63,7 +63,7 @@
                                              :color (:icon-02 @quo.colors/theme)}]]]]))
 
 (defn send-image [images]
-  [rn/view {:style (styles/reply-container)}
+  [rn/view {:style (styles/reply-container-image)}
    [rn/scroll-view {:horizontal true
                     :style      (styles/reply-content)}
     (for [{:keys [uri]} (vals images)]

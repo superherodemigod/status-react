@@ -433,9 +433,6 @@
                                                     (on-long-press
                                                      [{:on-press #(re-frame/dispatch [:chat.ui/reply-to-message message])
                                                        :label    (i18n/label :t/message-reply)}
-                                                      (when outgoing
-                                                        {:on-press #(re-frame/dispatch [:chat.ui/edit-message message])
-                                                         :label (i18n/label :t/message-edit)})
                                                       {:on-press #(react/copy-to-clipboard (get content :text))
                                                        :label    (i18n/label :t/sharing-copy-to-clipboard)}]))})
       [react/view (style/message-view message)
