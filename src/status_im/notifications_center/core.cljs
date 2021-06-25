@@ -9,7 +9,12 @@
   {:db (-> db
            (update-in [:activity.center/notifications :notifications] #(concat activities %))
            (update :activity.center/notifications-count + (count activities)))
-   :dispatch (when (= (:view-id db) :notifications-center) [:mark-all-activity-center-notifications-as-read])})
+   :dispatch (cond
+               (= (:view-id db) :notifications-center)
+               [:mark-all-activity-center-notifications-as-read]
+
+               (= (:view-id db) :chat)
+               [:accept-all-activity-center-notifications-from-chat (:current-chat-id db)])})
 
 (fx/defn get-activity-center-notifications-count
   {:events [:get-activity-center-notifications-count]}

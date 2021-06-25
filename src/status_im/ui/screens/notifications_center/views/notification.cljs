@@ -15,8 +15,7 @@
             [status-im.ui.screens.home.views.inner-item :as home-item]))
 
 (defn mention-element [from]
-  (let [is-public-key (string/starts-with? from "0x")]
-    (str (when is-public-key "@") @(re-frame/subscribe [:contacts/contact-name-by-identity from]))))
+  (str "@" @(re-frame/subscribe [:contacts/contact-name-by-identity from])))
 
 (def max-notification-length 160)
 (def max-notification-lines 2)
@@ -131,7 +130,7 @@
                  :number-of-lines     1
                  :style               styles/title-text}
        (if (= type constants/activity-center-notification-type-mention)
-         (str "@" sender)
+         sender
          [home-item/chat-item-title chat-id muted group-chat chat-name])]
       [react/text {:style               styles/datetime-text
                    :number-of-lines     1
