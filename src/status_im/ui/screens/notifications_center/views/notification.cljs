@@ -15,7 +15,8 @@
             [status-im.ui.screens.home.views.inner-item :as home-item]))
 
 (defn mention-element [from]
-  (str "@" @(re-frame/subscribe [:contacts/contact-name-by-identity from])))
+  (let [is-public-key (string/starts-with? from "0x")]
+    (str (when is-public-key "@") @(re-frame/subscribe [:contacts/contact-name-by-identity from]))))
 
 (def max-notification-length 160)
 (def max-notification-lines 2)

@@ -47,6 +47,20 @@
                      :on-success #(re-frame/dispatch [:sanitize-messages-and-process-response %])
                      :on-error   #()}]})
 
+(fx/defn accept-all-activity-center-notifications-from-chat
+  {:events [:accept-all-activity-center-notifications-from-chat]}
+  [{:keys [db]} chat-id]
+  (let [notifications (get-in db [:activity.center/notifications :notifications])
+        notifications-from-chat (filter #(= chat-id (:chat-id %)) notifications)
+        ids (map :id notifications-from-chat)]
+    {:db (update-in db [:activity.center/notifications :notifications]
+                    (fn [items] (remove #(get ids (:id %)) items)))
+     ::json-rpc/call [{:method     (json-rpc/call-ext-method "acceptActivityCenterNotifications")
+                       :params     [ids]
+                       :js-response true
+                       :on-success #(re-frame/dispatch [:sanitize-messages-and-process-response %])
+                       :on-error   #()}]}))
+
 (fx/defn accept-activity-center-notification-and-open-chat
   {:events [:accept-activity-center-notification-and-open-chat]}
   [{:keys [db]} id]
@@ -134,7 +148,3 @@
                       concat
                       (map data-store.activities/<-rpc notifications)))})
 
-(fx/defn close-center
-  {:events [:close-notifications-center]}
-  [cofx]
-  (clean-notifications cofx))

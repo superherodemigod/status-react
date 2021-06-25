@@ -84,7 +84,6 @@
                                                        :ignore-offset true}
                          [topbar/topbar {:navigation {:on-press #(do
                                                                    (reset-state)
-                                                                   (re-frame/dispatch [:close-notifications-center])
                                                                    (re-frame/dispatch [:navigate-back]))}
                                          :title      (i18n/label :t/activity)}]
                          (if (= (count notifications) 0)
@@ -98,7 +97,7 @@
                            [:<>
                             [filter-item]
                             [list/section-list
-                             {:key-fn                       #(or (:chat-id %) (:id %))
+                             {:key-fn                       #(str (:timestamp %) (or (:chat-id %) (:id %)))
                               :on-end-reached               #(re-frame/dispatch [:load-more-activity-center-notifications])
                               :keyboard-should-persist-taps :always
                               :sections                     notifications
