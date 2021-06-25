@@ -145,9 +145,12 @@ class TestCommandsMultipleDevices(MultipleDeviceTestCase):
         send_message.sign_transaction(keycard=True)
 
         home_2.just_fyi('Check that transaction message is updated with new status after offline')
+        [chat.get_back_to_home_view() for chat in (chat_1, chat_2)]
         chat_2.toggle_airplane_mode()
         self.network_api.wait_for_confirmation_of_transaction(sender['address'], amount, token=True)
         chat_2.toggle_airplane_mode()
+        home_1.get_chat(sender['username']).click()
+        home_2.get_chat(recipient_username).click()
         [message.transaction_status.wait_for_element_text(message.confirmed, wait_time=60) for message in
          (chat_2_sender_message, chat_1_request_message)]
         self.errors.verify_no_errors()
