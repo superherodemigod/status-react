@@ -6,12 +6,10 @@
             [status-im.data-store.activities :as data-store.activities]))
 
 (fx/defn handle-activities [{:keys [db]} activities]
-  (if (= (:view-id db) :notifications-center)
-    {:db (-> db
-             (update-in [:activity.center/notifications :notifications] #(concat activities %)))
-     :dispatch [:mark-all-activity-center-notifications-as-read]}
-    {:db (-> db
-             (update :activity.center/notifications-count + (count activities)))}))
+  {:db (-> db
+           (update-in [:activity.center/notifications :notifications] #(concat activities %))
+           (update :activity.center/notifications-count + (count activities)))
+   :dispatch (when (= (:view-id db) :notifications-center) [:mark-all-activity-center-notifications-as-read])})
 
 (fx/defn get-activity-center-notifications-count
   {:events [:get-activity-center-notifications-count]}
@@ -53,8 +51,10 @@
   (let [notifications (get-in db [:activity.center/notifications :notifications])
         notifications-from-chat (filter #(= chat-id (:chat-id %)) notifications)
         ids (map :id notifications-from-chat)]
-    {:db (update-in db [:activity.center/notifications :notifications]
-                    (fn [items] (remove #(get ids (:id %)) items)))
+    {:db (-> db
+             (update-in [:activity.center/notifications :notifications]
+                        (fn [items] (remove #(get ids (:id %)) items)))
+             (update :activity.center/notifications-count - (count ids)))
      ::json-rpc/call [{:method     (json-rpc/call-ext-method "acceptActivityCenterNotifications")
                        :params     [ids]
                        :js-response true
